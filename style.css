@@ -76,6 +76,10 @@ a:active {
   z-index: 2;
 }
 
+.deletebookmark:hover {
+  cursor: pointer;
+}
+
 .name {
   margin-top: 20px;
   margin-right: 20px;

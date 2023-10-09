@@ -7,7 +7,7 @@ const websiteUrlEl = document.getElementById("website-url");
 const bookmarksContainer = document.getElementById("bookmarks-container");
 
 //State Variable
-let bookmarks = [];
+let bookmarks = {};
 
 //Show modal, Focus on Input
 const showModal = function () {
@@ -47,44 +47,51 @@ const validate = function (nameValue, urlValue) {
 
 //Build Bookmarks DOM
 const loadBookmarksHtml = function () {
-  const allBookmarksMarkup = bookmarks
-    .map((bmark) => {
-      return `
-      <di class="item">
-      <i
-         class="fa-solid fa-x"
-         style="color: white"
-         id="delete-bookmark"
-         title="Delete Bookmark"
-         data-url="${bmark.url}"
-      ></i>
-      <div class="name">
-         <img
-            src='https://www.google.com/s2/u/0/favicons?domain=${bmark.url}'
-            alt="Favicon"
-         />
-         <a href="${bmark.url}" target="_blank">${bmark.name}</a>
-      </div>
-      </di>
-`;
-    })
-    .join("");
-  bookmarksContainer.innerHTML = "";
-  bookmarksContainer.insertAdjacentHTML("beforeend", allBookmarksMarkup);
-  console.log(`bookmarks rendered`, bookmarks);
+  // Remove all bookmark elements
+  bookmarksContainer.textContent = "";
+  // Build items
+  Object.keys(bookmarks).forEach((id) => {
+    const { name, url } = bookmarks[id];
+
+    // Item
+    const item = document.createElement("div");
+    item.classList.add("item");
+    // Close Icon
+    const closeIcon = document.createElement("i");
+    closeIcon.classList.add("fas", "fa-times", "deletebookmark");
+    closeIcon.setAttribute("title", "Delete Bookmark");
+    closeIcon.setAttribute("onclick", `deleteBookmark('${id}')`);
+    // Favicon / Link Container
+    const linkInfo = document.createElement("div");
+    linkInfo.classList.add("name");
+    // Favicon
+    const favicon = document.createElement("img");
+    favicon.setAttribute(
+      "src",
+      `https://s2.googleusercontent.com/s2/favicons?domain=${url}`
+    );
+    favicon.setAttribute("alt", "Favicon");
+    // Link
+    const link = document.createElement("a");
+    link.setAttribute("href", `${url}`);
+    link.setAttribute("target", "_blank");
+    link.textContent = name;
+    // Append to bookmarks container
+    linkInfo.append(favicon, link);
+    item.append(closeIcon, linkInfo);
+    bookmarksContainer.appendChild(item);
+  });
 };
 
 //Delete Bookmark
-const deleteBookmark = function (clickedUrl) {
-  //When button gets clicked, findIndex of of bookmark in our state variable.
-  const index = bookmarks.findIndex((bookmark) => bookmark.url === clickedUrl);
-  if (index === -1) return;
-  //Delete the element in the bookmarks array that has that index
-  bookmarks.splice(index, 1);
-  //Update the bookmarks Storage
+const deleteBookmark = function (id) {
+  // Loop through the bookmarks array
+  if (bookmarks[id]) {
+    delete bookmarks[id];
+  }
+  // Update bookmarks array in localStorage, re-populate DOM
   localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
-  //Update the DOM elements without rendering the whole dom.
-  loadBookmarksHtml();
+  fetchBookmarks();
 };
 
 //Fetch Bookmarks
@@ -92,12 +99,12 @@ const fetchBookmarks = function () {
   if (localStorage.getItem("bookmarks")) {
     bookmarks = JSON.parse(localStorage.getItem("bookmarks"));
   } else {
-    bookmarks = [
-      {
+    bookmarks = {
+      label1: {
         name: "Chris Website",
-        url: "www.somewebsite2.com",
+        url: "www.someWeb.com",
       },
-    ];
+    };
     localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
   }
   loadBookmarksHtml();
@@ -118,7 +125,8 @@ const storeBookmark = function (e) {
     name: nameValue,
     url: urlValue,
   };
-  bookmarks.push(bookmark);
+
+  bookmarks[urlValue] = bookmark;
   localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
   fetchBookmarks();
   bookmarkForm.reset();
